@@ -4,6 +4,8 @@ import classes from "./ContactData.css";
 import axios from "../../axios-orders";
 import Spinner from "../../components/UI/Spinner/Spinner";
 import { connect } from "react-redux";
+import WithErrorHandler from "../../hocs/withErrorHandler/withErrorHandler";
+import * as actions from "../../store/actions/index";
 
 class ContactData extends Component {
   state = {
@@ -12,14 +14,12 @@ class ContactData extends Component {
     address: {
       street: "",
       postalCode: ""
-    },
-    loading: false
+    }
   };
 
   orderHandler = event => {
-    console.log(this.props);
+    //console.log(this.props);
     event.preventDefault();
-    this.setState({ loading: true });
     const order = {
       ingredients: this.props.ings,
       price: this.props.price,
@@ -28,11 +28,7 @@ class ContactData extends Component {
         country: "India"
       }
     };
-    axios
-      .post("/orders.json", order)
-      .then(response => this.setState({ loading: false }))
-      .catch(error => this.setState({ loading: false }));
-    this.props.history.push("/");
+    this.props.onPurchaseBurgerStart(order);
   };
 
   render() {
@@ -47,7 +43,7 @@ class ContactData extends Component {
         </Button>
       </form>
     );
-    if (this.state.loading) {
+    if (this.props.loading) {
       form = <Spinner />;
     }
     return (
@@ -61,9 +57,21 @@ class ContactData extends Component {
 
 const mapStateToProps = state => {
   return {
-    ings: state.ingredients,
-    price: state.totalPrice
+    ings: state.burgerBuilder.ingredients,
+    price: state.burgerBuilder.totalPrice,
+    loading: state.order.loading
   };
 };
 
-export default connect(mapStateToProps)(ContactData);
+const mapDispatchToProps = dispatch => {
+  return {
+    onPurchaseBurgerStart: orderData => {
+      dispatch(actions.purchaseBurgerStart(orderData));
+    }
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(WithErrorHandler(ContactData, axios));
